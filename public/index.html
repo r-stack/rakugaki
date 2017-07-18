@@ -34,7 +34,7 @@
   <div class="segmenter" style="background-image: url(/img/chalk_with_kid.jpg)"></div>
   <h2 class="trigger-headline trigger-headline--hidden"><span>R</span><span>a</span><span>k</span><span>u</span><span>g</span><span>a</span><span>k</span><span>i</span></h2>
 </div>
-<div class="page">
+<div id="board" class="page">
     <div class="canvas-wrapper">
         <canvas id="c"></canvas>
     </div>
@@ -58,7 +58,7 @@
 console.log("START APP");
 var canvas;
 function init(){
-    canvas = new fabric.Canvas("c");
+    canvas = new fabric.Canvas("c", {isDrawingMode:true});
     
 }
 
@@ -80,7 +80,6 @@ init();
     <script  type="jquery/template">
 (function() {
 	var headline = document.querySelector('.trigger-headline'),
-		trigger = document.querySelector('.btn--trigger'),
 		segmenter = new Segmenter(document.querySelector('.segmenter'), {
 			pieces: 8,
 			positions: [
@@ -113,7 +112,6 @@ init();
     <script>
 (function() {
 	var headline = document.querySelector('.trigger-headline'),
-		trigger = document.querySelector('.btn--trigger'),
 		segmenter = new Segmenter(document.querySelector('.segmenter'), {
 			pieces: 9,
 			positions: [
@@ -141,6 +139,13 @@ init();
 			onReady: function() {
 				segmenter.animate();
 				headline.classList.remove('trigger-headline--hidden');
+			},
+			onAnimationComplete: function(){
+				setTimeout(()=>{
+					$('#splash').fadeOut(500);
+					$('#board').fadeIn(500);
+				}, 1000);
+				
 			}
 		});
 })();
