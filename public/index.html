@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+
+<head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,12 +9,15 @@
     <title>Rakugaki</title>
 
     <!-- Bootstrap -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+        crossorigin="anonymous">
     <!-- Optional theme -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp"
+        crossorigin="anonymous">
 
     <!-- Font awesome -->
-    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN"
+        crossorigin="anonymous">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css?family=Candal|Nunito|Poiret+One|Titillium+Web" rel="stylesheet">
 
@@ -28,24 +32,39 @@
     <link href="/css/segmenter.css" rel="stylesheet">
     <!-- App.css -->
     <link href="/css/app.css" rel="stylesheet">
-  </head>
-  <body>
-<div id="splash" class="page">
-  <div class="segmenter" style="background-image: url(/img/chalk_with_kid.jpg)"></div>
-  <h2 class="trigger-headline trigger-headline--hidden"><span>R</span><span>a</span><span>k</span><span>u</span><span>g</span><span>a</span><span>k</span><span>i</span></h2>
-</div>
-<div id="board" class="page">
-    <div class="canvas-wrapper">
-        <canvas id="c"></canvas>
-    </div>
-</div>
+</head>
 
+<body>
+    <div id="splash" class="page">
+        <div class="segmenter" style="background-image: url(/img/chalk_with_kid.jpg)"></div>
+        <h2 class="trigger-headline trigger-headline--hidden"><span>R</span><span>a</span><span>k</span><span>u</span><span>g</span><span>a</span><span>k</span><span>i</span></h2>
+    </div>
+    <div id="board" class="page">
+        <div class="canvas-wrapper">
+            <canvas id="c"></canvas>
+        </div>
+    </div>
+    <!-- init firebase -->
+    <script src="https://www.gstatic.com/firebasejs/4.1.3/firebase.js"></script>
+    <script>
+        // Initialize Firebase
+        var config = {
+            apiKey: "AIzaSyBSkbiW83TfkgITaqxOLSFOhsdU_O2nD1U",
+            authDomain: "rakugaki-f5c6d.firebaseapp.com",
+            databaseURL: "https://rakugaki-f5c6d.firebaseio.com",
+            projectId: "rakugaki-f5c6d",
+            storageBucket: "rakugaki-f5c6d.appspot.com",
+            messagingSenderId: "787433775208"
+        };
+        firebase.initializeApp(config);
+    </script>
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
     <!-- Include all compiled plugins (below), or include individual files as needed -->
     <!-- Latest compiled and minified JavaScript -->
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-    
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+        crossorigin="anonymous"></script>
+
     <!-- Fabric.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/1.7.16/fabric.min.js"></script>
     <!-- for sergmenter.js -->
@@ -55,100 +74,134 @@
 
     <!-- App Entry Point -->
     <script>
-console.log("START APP");
-var canvas;
-function init(){
-    canvas = new fabric.Canvas("c", {isDrawingMode:true});
-    
-}
+        console.log("START APP");
+        var canvas;
 
-init();
-(function(){
+        function init() {
+            canvas = new fabric.Canvas("c", {
+                isDrawingMode: true
+            });
 
-    window.addEventListener('resize', resizeCanvas, false);
+        }
 
-    function resizeCanvas() {
-        canvas.setHeight(window.innerHeight);
-        canvas.setWidth(window.innerWidth);
-        canvas.renderAll();
-    }
+        init();
+        (function () {
 
-    // resize on init
-    resizeCanvas();
-})(); 
+            window.addEventListener('resize', resizeCanvas, false);
+
+            function resizeCanvas() {
+                canvas.setHeight(window.innerHeight);
+                canvas.setWidth(window.innerWidth);
+                canvas.renderAll();
+            }
+
+            // resize on init
+            resizeCanvas();
+        })();
     </script>
-    <script  type="jquery/template">
-(function() {
-	var headline = document.querySelector('.trigger-headline'),
-		segmenter = new Segmenter(document.querySelector('.segmenter'), {
-			pieces: 8,
-			positions: [
-				{top: 0, left: 0, width: 100, height: 100},
-				{top: 0, left: 0, width: 100, height: 100},
-				{top: 0, left: 0, width: 100, height: 100},
-				{top: 0, left: 0, width: 100, height: 100},
-				{top: 0, left: 0, width: 100, height: 100},
-				{top: 0, left: 0, width: 100, height: 100},
-				{top: 0, left: 0, width: 100, height: 100},
-				{top: 0, left: 0, width: 100, height: 100}
-			],
-			shadows: false,
-			parallax: true,
-			parallaxMovement: {min: 10, max: 30},
-			animation: {
-				duration: 2500,
-				easing: 'easeOutExpo',
-				delay: 0,
-				opacity: .1,
-				translateZ: {min: 10, max: 25}
-			},
-			onReady: function() {
-				segmenter.animate();
-				headline.classList.remove('trigger-headline--hidden');
-			}
-		});
-})();
+    <script type="jquery/template">
+        (function() { var headline = document.querySelector('.trigger-headline'), segmenter = new Segmenter(document.querySelector('.segmenter'),
+        { pieces: 8, positions: [ {top: 0, left: 0, width: 100, height: 100}, {top: 0, left: 0, width: 100, height: 100},
+        {top: 0, left: 0, width: 100, height: 100}, {top: 0, left: 0, width: 100, height: 100}, {top: 0, left: 0, width:
+        100, height: 100}, {top: 0, left: 0, width: 100, height: 100}, {top: 0, left: 0, width: 100, height: 100}, {top:
+        0, left: 0, width: 100, height: 100} ], shadows: false, parallax: true, parallaxMovement: {min: 10, max: 30}, animation:
+        { duration: 2500, easing: 'easeOutExpo', delay: 0, opacity: .1, translateZ: {min: 10, max: 25} }, onReady: function()
+        { segmenter.animate(); headline.classList.remove('trigger-headline--hidden'); } }); })();
     </script>
     <script>
-(function() {
-	var headline = document.querySelector('.trigger-headline'),
-		segmenter = new Segmenter(document.querySelector('.segmenter'), {
-			pieces: 9,
-			positions: [
-				{top: 30, left: 5, width: 40, height: 80},
-				{top: 50, left: 25, width: 30, height: 30},
-				{top: 5, left: 75, width: 40, height: 20},
-				{top: 30, left: 45, width: 40, height: 20},
-				{top: 45, left: 15, width: 50, height: 40},
-				{top: 10, left: 40, width: 10, height: 20},
-				{top: 20, left: 50, width: 30, height: 70},
-				{top: 0, left: 10, width: 50, height: 60},
-				{top: 70, left: 40, width: 30, height: 30}
-			],
-			animation: {
-				duration: 2000,
-				easing: 'easeInOutCubic',
-				delay: 0,
-				opacity: 1,
-				translateZ: 85,
-				translateX: {min: -20, max: 20},
-				translateY: {min: -20, max: 20}
-			},
-			parallax: true,
-			parallaxMovement: {min: -10, max: -5},
-			onReady: function() {
-				segmenter.animate();
-				headline.classList.remove('trigger-headline--hidden');
-			},
-			onAnimationComplete: function(){
-				setTimeout(()=>{
-					$('#splash').fadeOut(500);
-					$('#board').fadeIn(500);
-				}, 1000);
-				
-			}
-		});
-})();
+        (function () {
+            var headline = document.querySelector('.trigger-headline'),
+                segmenter = new Segmenter(document.querySelector('.segmenter'), {
+                    pieces: 9,
+                    positions: [{
+                            top: 30,
+                            left: 5,
+                            width: 40,
+                            height: 80
+                        },
+                        {
+                            top: 50,
+                            left: 25,
+                            width: 30,
+                            height: 30
+                        },
+                        {
+                            top: 5,
+                            left: 75,
+                            width: 40,
+                            height: 20
+                        },
+                        {
+                            top: 30,
+                            left: 45,
+                            width: 40,
+                            height: 20
+                        },
+                        {
+                            top: 45,
+                            left: 15,
+                            width: 50,
+                            height: 40
+                        },
+                        {
+                            top: 10,
+                            left: 40,
+                            width: 10,
+                            height: 20
+                        },
+                        {
+                            top: 20,
+                            left: 50,
+                            width: 30,
+                            height: 70
+                        },
+                        {
+                            top: 0,
+                            left: 10,
+                            width: 50,
+                            height: 60
+                        },
+                        {
+                            top: 70,
+                            left: 40,
+                            width: 30,
+                            height: 30
+                        }
+                    ],
+                    animation: {
+                        duration: 2000,
+                        easing: 'easeInOutCubic',
+                        delay: 0,
+                        opacity: 1,
+                        translateZ: 85,
+                        translateX: {
+                            min: -20,
+                            max: 20
+                        },
+                        translateY: {
+                            min: -20,
+                            max: 20
+                        }
+                    },
+                    parallax: true,
+                    parallaxMovement: {
+                        min: -10,
+                        max: -5
+                    },
+                    onReady: function () {
+                        segmenter.animate();
+                        headline.classList.remove('trigger-headline--hidden');
+                    },
+                    onAnimationComplete: function () {
+                        setTimeout(() => {
+                            $('#splash').fadeOut(500);
+                            $('#board').fadeIn(500);
+                        }, 1000);
+
+                    }
+                });
+        })();
     </script>
-  </body>
+</body>
+
 </html>
