@@ -18,6 +18,9 @@
     <!-- Font awesome -->
     <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN"
         crossorigin="anonymous">
+    <!-- Bootstrap-social -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-social/5.1.1/bootstrap-social.min.css" />
+    
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css?family=Candal|Nunito|Poiret+One|Titillium+Web" rel="stylesheet">
 
@@ -38,6 +41,22 @@
     <div id="splash" class="page">
         <div class="segmenter" style="background-image: url(/img/chalk_with_kid.jpg)"></div>
         <h2 class="trigger-headline trigger-headline--hidden"><span>R</span><span>a</span><span>k</span><span>u</span><span>g</span><span>a</span><span>k</span><span>i</span></h2>
+        <div class="signInPane" style="display:none">
+             <div class="container">
+                <div class="row">
+                    <div class="col-sm-3">
+                        <a class="btn btn-block btn-social btn-github"><span class="fa fa-github"></span> Sign in with Github </a>
+                    </div>
+                    <div class="col-sm-3">
+                        <a class="btn btn-block btn-social btn-google"><span class="fa fa-google"></span> Sign in with Google </a></div>
+                    <div class="col-sm-3">
+                        <a class="btn btn-block btn-social btn-twitter"><span class="fa fa-twitter"></span> Sign in with Twitter </a></div>
+                    <div class="col-sm-3">
+                        <a class="btn btn-block btn-social btn-facebook"><span class="fa fa-facebook"></span> Sign in with Facebook </a>
+                    </div>
+                </div>
+            </div> 
+        </div>
     </div>
     <div id="board" class="page">
         <div class="canvas-wrapper">
@@ -82,12 +101,63 @@
             canvas = new fabric.Canvas("c", {
                 isDrawingMode: true
             });
+            let self = window;
 
-        }
+            //#### global event
+            // detect sign in state change
+            firebase.auth().onAuthStateChanged(function (user) {
+                self.user = user;
+                if (user) {
+                    console.log("User is signed in.");
+                    //naviate to main
+                    $('#splash').fadeOut(500);
+                    $('#board').fadeIn(500);
+                } else {
+                    console.log("No user is signed in.");
+                    //navigate to splash
 
-        init();
-        (function () {
+                    $('#splash').fadeIn(500);
+                    $('#board').fadeOut(500);
+                }
+            });
+            //sign in event
+            function signIn(provider){
+                firebase.auth().signInWithPopup(provider).then(function (result) {
+                    // This gives you a GitHub Access Token. You can use it to access the GitHub API.
+                    const token = result.credential.accessToken;
+                    // The signed-in user info.
+                    const user = result.user;
+                    self.user = user;
+                    //TODO navigate main
 
+                }).catch(function (error) {
+                    // Handle Errors here.
+                    const errorCode = error.code;
+                    const errorMessage = error.message;
+                    // The email of the user's account used.
+                    const email = error.email;
+                    // The firebase.auth.AuthCredential type that was used.
+                    const credential = error.credential;
+                    alert("Login Failed.");
+                });
+            }
+            $(".signInPane").on("click", "a.btn-github", (evt) => {
+                const provider = new firebase.auth.GithubAuthProvider();
+                signIn(provider);
+            });
+            $(".signInPane").on("click", "a.btn-google", (evt) => {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                signIn(provider);
+            });
+            $(".signInPane").on("click", "a.btn-twitter", (evt) => {
+                const provider = new firebase.auth.TwitterAuthProvider();
+                signIn(provider);
+            });
+            $(".signInPane").on("click", "a.btn-facebook", (evt) => {
+                const provider = new firebase.auth.FacebookAuthProvider();
+                signIn(provider);
+            });
+            //resize handler
             window.addEventListener('resize', resizeCanvas, false);
 
             function resizeCanvas() {
@@ -98,7 +168,9 @@
 
             // resize on init
             resizeCanvas();
-        })();
+        }
+
+        init();
     </script>
     <script type="jquery/template">
         (function() { var headline = document.querySelector('.trigger-headline'), segmenter = new Segmenter(document.querySelector('.segmenter'),
@@ -111,8 +183,8 @@
     </script>
     <script>
         (function () {
-            var headline = document.querySelector('.trigger-headline'),
-                segmenter = new Segmenter(document.querySelector('.segmenter'), {
+            var headline = document.querySelector('.trigger-headline');
+            var segmenter = window.seg = new Segmenter(document.querySelector('.segmenter'), {
                     pieces: 9,
                     positions: [{
                             top: 30,
@@ -194,10 +266,16 @@
                         headline.classList.remove('trigger-headline--hidden');
                     },
                     onAnimationComplete: function () {
-                        setTimeout(() => {
-                            $('#splash').fadeOut(500);
-                            $('#board').fadeIn(500);
-                        }, 1000);
+                        if(firebase.auth().currentUser){
+                            //logined
+                            // setTimeout(() => {
+                            //     $('#splash').fadeOut(500);
+                            //     $('#board').fadeIn(500);
+                            // }, 1000);
+                        }else{
+                            $(".signInPane").fadeIn();
+                        }
+                        return ;
 
                     }
                 });

@@ -89,8 +89,18 @@ html, body{
 	-webkit-transform: translate3d(200px,0,0);
 	transform: translate3d(200px,0,0);
 }
-
-
+.signInPane {
+    position: absolute;
+    bottom: 10%;
+    width: 100%;
+}
+@media screen and (orientation: landscape) and (max-height: 420px) {
+   /* 横置き(横長)の場合 */
+   .signInPane .col-sm-3 {
+       width:25% !important;
+       float: left;
+   }
+}
 
 #splash.page{
     display:block;
