@@ -197,10 +197,19 @@ raku.SplashView = Backbone.View.extend({
 raku.BoardView = Backbone.View.extend({
 
     initialize: function(){
+        const self = this;
         _.bindAll(this, "resizeCanvas");
 
         this.canvas = new fabric.Canvas("c", {
             isDrawingMode: true
+        });
+
+        //load stamp sprites(FontAwesome)
+        fabric.loadSVGFromURL("/assets/sprites.svg", (paths)=>{
+            paths.forEach((n)=>{
+                n.scale(0.04);
+            });
+            self.sprites = paths;
         });
         // change window size
         window.addEventListener('resize', this.resizeCanvas, false);
