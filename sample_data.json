@@ -1,0 +1,27 @@
+{
+
+    "attendees": {
+        "kiikuraxxx": {
+            "role": "owner",
+            "color": "#00BB00"
+        }
+    },
+    "boards": {
+
+    },
+
+    "canvases": {
+        "abc": {
+            "backgroundColor": "#FFF"
+        }
+    },
+    "objects": {
+        "abc":{
+            "[object_id01]":{
+                "type": "path"
+            }   
+        }
+    }
+
+
+}
