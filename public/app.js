@@ -278,10 +278,12 @@ raku.BoardView = Backbone.View.extend({
         })
         //Listen for palatte
         $(".btn.mode-select").on("click", evt=>{
+            canvas.defaultCursor = "auto"
             canvas.selection=true;
             canvas.isDrawingMode=false;
             canvas.activePanningMode=false;
             canvas.activeTextMode=false;
+            canvas.activeStampMode=false;
         });
 
         $(".btn.mode-draw").on("click", evt=>{
@@ -289,6 +291,7 @@ raku.BoardView = Backbone.View.extend({
             canvas.isDrawingMode=true;
             canvas.activePanningMode=false;
             canvas.activeTextMode=false;
+            canvas.activeStampMode=false;
         });
         $(".btn.mode-text").on("click", evt=>{
 
@@ -296,19 +299,23 @@ raku.BoardView = Backbone.View.extend({
             canvas.isDrawingMode=false;
             canvas.activePanningMode=false;
             canvas.activeTextMode=true;
+            canvas.activeStampMode=false;
         });
         $(".btn.mode-stamp").on("click", evt=>{
 
             canvas.selection=false;
             canvas.isDrawingMode=false;
             canvas.activePanningMode=false;
-            canvas.activeTextMode=true;
+            canvas.activeTextMode=false;
+            canvas.activeStampMode=true;
         });
         $(".btn.mode-pan").on("click", evt=>{
+            canvas.defaultCursor="-webkit-grab";
             canvas.selection=false;
             canvas.isDrawingMode=false;
             canvas.activePanningMode=true;
             canvas.activeTextMode=false;
+            canvas.activeStampMode=false;
         });
 
         $(".btn.zoom-up").on("click", evt=>{
@@ -344,15 +351,31 @@ raku.BoardView = Backbone.View.extend({
         manager.add(pinch);
         manager.on("doubletap", function (ev) {
             console.log("%cdoubletap detected", "background: #1f656a; color: white;");
-            console.log(ev);
             canvas.selection = !canvas.selection;            
             console.log("change selection  toggle", canvas.selection);
         });
         manager.on("press", function (ev) {
             console.log("press", ev);
+            if(canvas.activeStampMode){
+                console.log("STAMP!");
+            }else if(canvas.activeTextMode){
+                console.log("TEXT!!!");
+                let viewportLeft = canvas.viewportTransform[4];
+                let viewportTop = canvas.viewportTransform[5];
+                let srcEvt = ev.srcEvent;
+                let cx = srcEvt.clientX;
+                let cy = srcEvt.clientY;
+                let cp = new fabric.Point(cx, cy);
+                let ivp=fabric.util.invertTransform(canvas.viewportTransform)                
+                let gp = fabric.util.transformPoint(cp, ivp);
+                let n = new fabric.IText("Text", {fill: self.attendee.color});
+                n.left = gp.x;
+                n.top = gp.y;
+                canvas.add(n);
+                canvas.setActiveObject(n);
+                
+            }
             // canvasPressEvent(ev);
-            canvas.activePanningMode = "canvas.activePanningMode";
-            console.log("change panningMode", canvas.activePanningMode);
         });
         var LOG = true;
         manager.on("pan1Fingerstart", function (ev) {
