@@ -356,18 +356,24 @@ raku.BoardView = Backbone.View.extend({
         });
         manager.on("press", function (ev) {
             console.log("press", ev);
+            let viewportLeft = canvas.viewportTransform[4];
+            let viewportTop = canvas.viewportTransform[5];
+            let srcEvt = ev.srcEvent;
+            let cx = srcEvt.clientX;
+            let cy = srcEvt.clientY;
+            let cp = new fabric.Point(cx, cy);
+            let ivp=fabric.util.invertTransform(canvas.viewportTransform)                
+            let gp = fabric.util.transformPoint(cp, ivp);
             if(canvas.activeStampMode){
                 console.log("STAMP!");
+                let n = self.currentStamp.clone();
+                n.fill = self.attendee.color;
+                n.left = gp.x;
+                n.top = gp.y;
+                canvas.add(n);
+
             }else if(canvas.activeTextMode){
                 console.log("TEXT!!!");
-                let viewportLeft = canvas.viewportTransform[4];
-                let viewportTop = canvas.viewportTransform[5];
-                let srcEvt = ev.srcEvent;
-                let cx = srcEvt.clientX;
-                let cy = srcEvt.clientY;
-                let cp = new fabric.Point(cx, cy);
-                let ivp=fabric.util.invertTransform(canvas.viewportTransform)                
-                let gp = fabric.util.transformPoint(cp, ivp);
                 let n = new fabric.IText("Text", {fill: self.attendee.color});
                 n.left = gp.x;
                 n.top = gp.y;
@@ -461,13 +467,24 @@ raku.BoardView = Backbone.View.extend({
         });
         //#########################################
 
-
+        self.stamps = {};
         //load stamp sprites(FontAwesome)
         fabric.loadSVGFromURL("/assets/sprites.svg", (paths) => {
             paths.forEach((n) => {
                 n.scale(0.04);
             });
             self.sprites = paths;
+        });
+
+        self.stampNames = ["heart_1", "heart_2", "rabbit_apathy",
+            "rabbit_blankly", "rabbit_good", "rabbit_oops", "rabbit_sad"];
+        self.stampNames.forEach(sname=>{
+            fabric.loadSVGFromURL("/assets/"+sname+".svg", (paths)=>{
+                paths.forEach((n) => {
+                    n.scale(0.1);
+                    self.stamps[sname] = n;
+                });
+            });
         });
         // change window size
         window.addEventListener('resize', this.resizeCanvas, false);
@@ -491,6 +508,16 @@ raku.BoardView = Backbone.View.extend({
             }
         }.bind(this));
     },
+
+    nextStamp: function(){
+        self.currentStampIdx++;
+        if(self.currentStampIdx >= self.stampNames.length){
+            self.currentStampIdx = 0;
+        }
+        self.currentStamp = self.stamps[self.stampNames[self.currentStampIdx]];
+
+    },
+
     setUpCanvas: function (boardId) {
         const self = this;
         this.cleanUpCanvas();
@@ -502,6 +529,12 @@ raku.BoardView = Backbone.View.extend({
         $(".profile").css({"background-color": this.attendee.color});
         // Setup Brush
         this.canvas.freeDrawingBrush.color = this.attendee.color;
+
+        // Setup Current Stamp
+        self.currentStampIdx = 0;
+        self.currentStamp = self.stamps[self.stampNames[self.currentStampIdx]]; 
+
+
         // Listen firebase Event
         const canvasRef = firebase.database().ref("canvases/" + boardId);
         this.__listenRefs.push(canvasRef);
