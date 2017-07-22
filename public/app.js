@@ -22,7 +22,7 @@ _.mixin({
         }
         return j;
     },
-    fromFBJson: function(j){
+    fromFBJson: function (j) {
         for (var i in j) {
             if (typeof j[i] === "object") {
                 _.fromFBJson(j[i]);
@@ -77,6 +77,11 @@ raku.Router = Backbone.Router.extend({
                 email: user.email,
                 photoURL: user.photoURL
             });
+
+            //change user
+            $(".user_photo").attr("src", user.photoURL);
+            var name = user.displayName || user.email;
+            $(".username").text(name);
             //naviate to main
 
             this.activateBoard();
@@ -86,24 +91,24 @@ raku.Router = Backbone.Router.extend({
             this.inactivateBoard();
         }
     },
-    activateBoard: function(){
+    activateBoard: function () {
         const self = this;
         $('#splash').fadeOut(500);
         $('#board').fadeIn(500);
-        firebase.database().ref("boards/"+this.boardId).once("value", snap=>{
+        firebase.database().ref("boards/" + this.boardId).once("value", snap => {
             self.boardInfo = snap.val();
-            if(self.boardInfo){
+            if (self.boardInfo) {
                 //存在するボード
                 self.boardView.attend(self.boardId, self.boardInfo, self.user);
-            }else{
+            } else {
                 bootbox.alert("No board exists.");
             }
         });
     },
-    inactivateBoard: function(){
-            $('#splash').fadeIn(500);
-            $('#board').fadeOut(500);
-            this.splashView.splash();
+    inactivateBoard: function () {
+        $('#splash').fadeIn(500);
+        $('#board').fadeOut(500);
+        this.splashView.splash();
     }
 });
 
@@ -262,9 +267,177 @@ raku.BoardView = Backbone.View.extend({
         this.objectMap = {};
         this.__listenRefs = [];
 
-        this.canvas = new fabric.Canvas("c", {
-            isDrawingMode: true
+        //initialize canvas
+        this.canvas = window.canvas = new fabric.Canvas("c", {
+            isDrawingMode: false
         });
+
+        //profile event listener
+        $(".btn.signout").on("click", evt=>{
+            firebase.auth().signOut();
+        })
+        //Listen for palatte
+        $(".btn.mode-select").on("click", evt=>{
+            canvas.selection=true;
+            canvas.isDrawingMode=false;
+            canvas.activePanningMode=false;
+            canvas.activeTextMode=false;
+        });
+
+        $(".btn.mode-draw").on("click", evt=>{
+            canvas.selection=false;
+            canvas.isDrawingMode=true;
+            canvas.activePanningMode=false;
+            canvas.activeTextMode=false;
+        });
+        $(".btn.mode-text").on("click", evt=>{
+
+            canvas.selection=false;
+            canvas.isDrawingMode=false;
+            canvas.activePanningMode=false;
+            canvas.activeTextMode=true;
+        });
+        $(".btn.mode-stamp").on("click", evt=>{
+
+            canvas.selection=false;
+            canvas.isDrawingMode=false;
+            canvas.activePanningMode=false;
+            canvas.activeTextMode=true;
+        });
+        $(".btn.mode-pan").on("click", evt=>{
+            canvas.selection=false;
+            canvas.isDrawingMode=false;
+            canvas.activePanningMode=true;
+            canvas.activeTextMode=false;
+        });
+
+        $(".btn.zoom-up").on("click", evt=>{
+            canvas.setZoom(canvas.getZoom()*1.25);
+        });
+        $(".btn.zoom-down").on("click", evt=>{
+            canvas.setZoom(canvas.getZoom()*0.75);
+        });
+
+
+        //initialize canvas event
+        var manager = window.hm = new Hammer.Manager($(".canvas-wrapper")[0]);
+        manager.add(new Hammer.Tap({
+            event: 'doubletap',
+            taps: 2,
+            threshold: 75,
+            interval: 400,
+            time: 600,
+            posThreshold: 25
+        }));
+        manager.add(new Hammer.Press({
+            event: 'press',
+            time: 450
+        }));
+        var pan1Finger = new Hammer.Pan({
+            event: 'pan1Finger',
+            pointers: 1
+        });
+        manager.add(pan1Finger);
+        var pinch = new Hammer.Pinch({
+            event: 'pinch'
+        });
+        manager.add(pinch);
+        manager.on("doubletap", function (ev) {
+            console.log("%cdoubletap detected", "background: #1f656a; color: white;");
+            console.log(ev);
+            canvas.selection = !canvas.selection;            
+            console.log("change selection  toggle", canvas.selection);
+        });
+        manager.on("press", function (ev) {
+            console.log("press", ev);
+            // canvasPressEvent(ev);
+            canvas.activePanningMode = "canvas.activePanningMode";
+            console.log("change panningMode", canvas.activePanningMode);
+        });
+        var LOG = true;
+        manager.on("pan1Fingerstart", function (ev) {
+            if (!canvas.activePanningMode) {
+                if (!canvas.isDrawingMode && !canvas.getActiveObject() && !canvas.getActiveGroup()) {
+                    if (LOG) {
+                        console.log("STARTING pan1Finger");
+                        console.log(ev);
+                    }
+                    canvas.pan1Fingerstarted = true;
+                    gestureSetEnabled(manager, 'pinch', false);
+                }
+            } else if (!canvas.selection) {
+                /********** PANNING **********/
+                canvas.defaultCursor = "-webkit-grabbing";
+                // This is to allow the canvas panning with one finger
+                if (LOG) {
+                    console.log("STARTING pan1Finger in PANNING MODE");
+                    console.log(ev);
+                }
+                canvas.viewportLeft = canvas.viewportTransform[4];
+                canvas.viewportTop = canvas.viewportTransform[5];
+                // gestureSetEnabled(manager, 'pinch', false);
+            } else if (!canvas.getActiveObject()) {
+                console.log("Starting selection", canvas.selection);
+            }
+        });
+        manager.on("pan1Fingermove", function (ev) {
+            if (!canvas.activePanningMode) {
+                if (!canvas.isDrawingMode && !canvas.getActiveObject() && !canvas.getActiveGroup() && canvas.pan1Fingerstarted) {
+                    if (LOG) {
+                        console.log("MOVING pan1Finger");
+                        console.log(ev);
+
+                    }
+                }
+            } else if (!canvas.selection) {
+                /********** PANNING **********/
+                canvas.defaultCursor = "-webkit-grabbing";
+                // This should only happen when the mouse event happens over a zone where NO objects are being touched
+                if (!canvas.isDrawingMode && !canvas.getActiveObject() && !canvas.getActiveGroup()) {
+                    var x = -canvas.viewportLeft - ev.deltaX;
+                    var y = -canvas.viewportTop - ev.deltaY;
+                    canvas.absolutePan(new fabric.Point(x, y));
+                }
+            } else if (!canvas.getActiveObject()) {
+                /********** SQUARE SELECTING **********/
+                if (LOG) {
+                    console.log("Selecting");
+                }
+            }
+        });
+        manager.on("pan1Fingerend", function (ev) {
+            console.log("END pan1Finger");
+            if (!canvas.activePanningMode && !canvas.isSamplingLineMode && !canvas.selection) {
+                if (!canvas.isDrawingMode && !canvas.getActiveObject() && !canvas.getActiveGroup() && canvas.pan1Fingerstarted && !canvas.connectorsHidden) {}
+            } else if (!canvas.selection) {
+                canvas.defaultCursor = "-webkit-grab";
+            } else if (!canvas.getActiveObject()) {
+                if (LOG) {
+                    console.log("Square selection ended");
+                }
+            }
+        });
+
+        // ###################### PINCHING ###################### //
+        manager.on("pinchstart", function (ev) {
+            console.log("pinchstart");
+            if (!canvas.getActiveObject() && !canvas.getActiveGroup()) {
+                canvas.zoomBeforePanning = canvas.getZoom();
+            }
+        });
+        manager.on("pinchmove", function (ev) {
+            if (LOG) {
+                console.log("%cpinchmove", "background: aqua");
+                console.log(ev);
+            }
+            if (!canvas.getActiveObject() && !canvas.getActiveGroup()) {
+                var center = new fabric.Point(ev.center.x, ev.center.y);
+                canvas.zoomToPoint(center, canvas.zoomBeforePanning * ev.scale);
+                canvas.renderAll();
+            }
+        });
+        //#########################################
+
 
         //load stamp sprites(FontAwesome)
         fabric.loadSVGFromURL("/assets/sprites.svg", (paths) => {
@@ -277,20 +450,20 @@ raku.BoardView = Backbone.View.extend({
         window.addEventListener('resize', this.resizeCanvas, false);
         this.resizeCanvas();
     },
-    attend: function(boardId, boardInfo, user){
-        firebase.database().ref("attndees/" + boardId + "/" + user.uid).once("value", function(snap){
+    attend: function (boardId, boardInfo, user) {
+        firebase.database().ref("attndees/" + boardId + "/" + user.uid).once("value", function (snap) {
             this.attendee = snap.value
-            if(this.attendee){
+            if (this.attendee) {
                 //already attend
                 this.setUpCanvas(boardId);
-            }else{
+            } else {
                 // new attend
                 let colorHash = new ColorHash();
                 this.attendee = {
                     role: boardInfo.owner === user.uid ? "owner" : "member",
                     color: colorHash.hex(user.uid)
                 }
-                firebase.database().ref("attendees/"+boardId + "/" + user.uid).set(this.attendee);
+                firebase.database().ref("attendees/" + boardId + "/" + user.uid).set(this.attendee);
                 this.setUpCanvas(boardId);
             }
         }.bind(this));
@@ -301,6 +474,9 @@ raku.BoardView = Backbone.View.extend({
         //init data
         this.objectMap = {}
 
+        // SetUp Attendee Color
+        $(".palette").css({"background-color": this.attendee.color});
+        $(".profile").css({"background-color": this.attendee.color});
         // Setup Brush
         this.canvas.freeDrawingBrush.color = this.attendee.color;
         // Listen firebase Event
@@ -315,9 +491,9 @@ raku.BoardView = Backbone.View.extend({
             if (key in self.objectMap) return;
             fabric.util.enlivenObjects([data], objects => {
                 objects.forEach(obj => {
-                    if(self.attendee.role == "owner"||obj.createdBy === app.user.uid){
+                    if (self.attendee.role == "owner" || obj.createdBy === app.user.uid) {
                         obj.selectable = true;
-                    }else{
+                    } else {
                         obj.selectable = false;
                     }
 
@@ -328,6 +504,17 @@ raku.BoardView = Backbone.View.extend({
         });
         this.__listenRefs.push(objectsRef);
 
+        objectsRef.on("child_changed", (snap, prevId)=>{
+            console.log("child_changed", snap, prevId);
+            let key = snap.key;
+            let prev = self.objectMap[key];
+            let data = _.fromFBJson(snap.val());
+            if(prev.version != data.version){
+                prev.set(data);
+                canvas.renderAll();
+            }
+        });
+
         // Listen for canvas
         this.canvas.on("object:added", ev => {
             let target = ev.target;
@@ -336,9 +523,10 @@ raku.BoardView = Backbone.View.extend({
                 //local追加したオブジェクト
                 target.set({
                     "uuid": _.uuid(),
-                    "createdBy": app.user.uid
+                    "createdBy": app.user.uid,
+                    "version": 0
                 });
-                let data = target.toObject(["uuid", "createdBy"]);
+                let data = target.toObject(["uuid", "createdBy", "version"]);
                 let pushedRef = objectsRef.push();
                 console.log("push objects", pushedRef.key, data);
                 self.objectMap[pushedRef.key] = target;
@@ -346,9 +534,20 @@ raku.BoardView = Backbone.View.extend({
             }
         });
 
-        // this.canvas.on("object:modified", ev=>{V
+        this.canvas.on("object:modified", ev=>{
+            let target = ev.target;
+            console.log("object:modified", target);
+            target.set("version", 1+ (target.version||0))
+            let data = target.toObject(["uuid", "createdBy", "version"]);
+            let key = _.findKey(self.objectMap, {uuid:data.uuid});
+            self.objectMap[key] = target;
+            objectsRef.child(key).set(_.toFBJson(data));
+        });
+        this.canvas.on("object:removed", ev=>{
+            console.log("object:removed");
 
-        // });
+        });
+        
     },
 
     cleanUpCanvas: function () {
@@ -375,4 +574,7 @@ raku.BoardView = Backbone.View.extend({
  */
 
 const app = window.app = new raku.Router();
-Backbone.history.start({pushState: true, root: '/'});
+Backbone.history.start({
+    pushState: true,
+    root: '/'
+});
