@@ -294,7 +294,7 @@ raku.BoardView = Backbone.View.extend({
             canvas.activeStampMode=false;
         });
         $(".btn.mode-text").on("click", evt=>{
-
+            canvas.defaultCursor = "text";
             canvas.selection=false;
             canvas.isDrawingMode=false;
             canvas.activePanningMode=false;
@@ -302,7 +302,7 @@ raku.BoardView = Backbone.View.extend({
             canvas.activeStampMode=false;
         });
         $(".btn.mode-stamp").on("click", evt=>{
-
+            canvas.defaultCursor = "cell";
             canvas.selection=false;
             canvas.isDrawingMode=false;
             canvas.activePanningMode=false;
