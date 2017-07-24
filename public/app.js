@@ -273,58 +273,48 @@ raku.BoardView = Backbone.View.extend({
         });
 
         //profile event listener
-        $(".btn.signout").on("click", evt=>{
+        $(".btn.signout").on("click", evt => {
             firebase.auth().signOut();
         })
         //Listen for palatte
-        $(".btn.mode-select").on("click", evt=>{
-            canvas.defaultCursor = "auto"
-            canvas.selection=true;
-            canvas.isDrawingMode=false;
-            canvas.activePanningMode=false;
-            canvas.activeTextMode=false;
-            canvas.activeStampMode=false;
+        $(".btn.mode-select").on("click", evt => {
+            self.setMode("select");
+        });
+        $(".btn.mode-draw").on("click", evt => {
+            self.setMode("draw");
+        });
+        $(".btn.mode-text").on("click", evt => {
+            self.setMode("text");
+        });
+        $(".btn.mode-stamp").on("click", evt => {
+            self.setMode("stamp");
+        });
+        $(".btn.mode-pan").on("click", evt => {
+            self.setMode("pan");
         });
 
-        $(".btn.mode-draw").on("click", evt=>{
-            canvas.selection=false;
-            canvas.isDrawingMode=true;
-            canvas.activePanningMode=false;
-            canvas.activeTextMode=false;
-            canvas.activeStampMode=false;
+        $(".btn.zoom-up").on("click", evt => {
+            canvas.setZoom(canvas.getZoom() * 1.25);
         });
-        $(".btn.mode-text").on("click", evt=>{
-            canvas.defaultCursor = "text";
-            canvas.selection=false;
-            canvas.isDrawingMode=false;
-            canvas.activePanningMode=false;
-            canvas.activeTextMode=true;
-            canvas.activeStampMode=false;
-        });
-        $(".btn.mode-stamp").on("click", evt=>{
-            canvas.defaultCursor = "cell";
-            canvas.selection=false;
-            canvas.isDrawingMode=false;
-            canvas.activePanningMode=false;
-            canvas.activeTextMode=false;
-            canvas.activeStampMode=true;
-        });
-        $(".btn.mode-pan").on("click", evt=>{
-            canvas.defaultCursor="-webkit-grab";
-            canvas.selection=false;
-            canvas.isDrawingMode=false;
-            canvas.activePanningMode=true;
-            canvas.activeTextMode=false;
-            canvas.activeStampMode=false;
+        $(".btn.zoom-down").on("click", evt => {
+            canvas.setZoom(canvas.getZoom() * 0.75);
         });
 
-        $(".btn.zoom-up").on("click", evt=>{
-            canvas.setZoom(canvas.getZoom()*1.25);
+        $(".btn.remove").on("click", evt => {
+            let obj = canvas.getActiveObject();
+            if (obj) {
+                canvas.discardActiveObject();
+                canvas.remove(obj);
+            }
+            let group = canvas.getActiveGroup();
+            if (group) {
+                for (obj of group.getObjects()) {
+                    canvas.remove(obj);
+                }
+                canvas.discardActiveGroup();
+                canvas.renderAll();
+            }
         });
-        $(".btn.zoom-down").on("click", evt=>{
-            canvas.setZoom(canvas.getZoom()*0.75);
-        });
-
 
         //initialize canvas event
         var manager = window.hm = new Hammer.Manager($(".canvas-wrapper")[0]);
@@ -351,38 +341,14 @@ raku.BoardView = Backbone.View.extend({
         manager.add(pinch);
         manager.on("doubletap", function (ev) {
             console.log("%cdoubletap detected", "background: #1f656a; color: white;");
-            canvas.selection = !canvas.selection;            
+            canvas.selection = !canvas.selection;
             console.log("change selection  toggle", canvas.selection);
         });
         manager.on("press", function (ev) {
             console.log("press", ev);
-            let viewportLeft = canvas.viewportTransform[4];
-            let viewportTop = canvas.viewportTransform[5];
             let srcEvt = ev.srcEvent;
-            let cx = srcEvt.clientX;
-            let cy = srcEvt.clientY;
-            let cp = new fabric.Point(cx, cy);
-            let ivp=fabric.util.invertTransform(canvas.viewportTransform)                
-            let gp = fabric.util.transformPoint(cp, ivp);
-            if(canvas.activeStampMode){
-                console.log("STAMP!");
-                let n = self.currentStamp.clone();
-                n.fill = self.attendee.color;
-                n.left = gp.x;
-                n.top = gp.y;
-                canvas.add(n);
-
-            }else if(canvas.activeTextMode){
-                console.log("TEXT!!!");
-                let n = new fabric.IText("Text", {fill: self.attendee.color});
-                n.left = gp.x;
-                n.top = gp.y;
-                canvas.add(n);
-                canvas.setActiveObject(n);
-                
-            }
-            // canvasPressEvent(ev);
         });
+
         var LOG = true;
         manager.on("pan1Fingerstart", function (ev) {
             if (!canvas.activePanningMode) {
@@ -392,7 +358,6 @@ raku.BoardView = Backbone.View.extend({
                         console.log(ev);
                     }
                     canvas.pan1Fingerstarted = true;
-                    gestureSetEnabled(manager, 'pinch', false);
                 }
             } else if (!canvas.selection) {
                 /********** PANNING **********/
@@ -415,7 +380,15 @@ raku.BoardView = Backbone.View.extend({
                     if (LOG) {
                         console.log("MOVING pan1Finger");
                         console.log(ev);
-
+                    }
+                    if(["stamp"].indexOf(self.getMode()) !== -1 && canvas.__droppingObject){
+                        // canvas.__stamping
+                        let cp = new fabric.Point(ev.center.x, ev.center.y);
+                        let ivp = fabric.util.invertTransform(canvas.viewportTransform)
+                        let gp = fabric.util.transformPoint(cp, ivp);
+                        canvas.__droppingObject.left = gp.x;
+                        canvas.__droppingObject.top = gp.y;
+                        canvas.renderAll();
                     }
                 }
             } else if (!canvas.selection) {
@@ -423,8 +396,8 @@ raku.BoardView = Backbone.View.extend({
                 canvas.defaultCursor = "-webkit-grabbing";
                 // This should only happen when the mouse event happens over a zone where NO objects are being touched
                 if (!canvas.isDrawingMode && !canvas.getActiveObject() && !canvas.getActiveGroup()) {
-                    var x = -canvas.viewportLeft - ev.deltaX;
-                    var y = -canvas.viewportTop - ev.deltaY;
+                    let x = -canvas.viewportLeft - ev.deltaX;
+                    let y = -canvas.viewportTop - ev.deltaY;
                     canvas.absolutePan(new fabric.Point(x, y));
                 }
             } else if (!canvas.getActiveObject()) {
@@ -437,7 +410,13 @@ raku.BoardView = Backbone.View.extend({
         manager.on("pan1Fingerend", function (ev) {
             console.log("END pan1Finger");
             if (!canvas.activePanningMode && !canvas.isSamplingLineMode && !canvas.selection) {
-                if (!canvas.isDrawingMode && !canvas.getActiveObject() && !canvas.getActiveGroup() && canvas.pan1Fingerstarted && !canvas.connectorsHidden) {}
+                if (!canvas.isDrawingMode && !canvas.getActiveObject() && !canvas.getActiveGroup() && canvas.pan1Fingerstarted && !canvas.connectorsHidden) {
+
+                    if(canvas.__droppingObject){
+                        canvas.fire("object:modified", {target: canvas.__droppingObject});
+                        delete canvas.__droppingObject;
+                    }
+                }
             } else if (!canvas.selection) {
                 canvas.defaultCursor = "-webkit-grab";
             } else if (!canvas.getActiveObject()) {
@@ -477,9 +456,10 @@ raku.BoardView = Backbone.View.extend({
         });
 
         self.stampNames = ["heart_1", "heart_2", "rabbit_apathy",
-            "rabbit_blankly", "rabbit_good", "rabbit_oops", "rabbit_sad"];
-        self.stampNames.forEach(sname=>{
-            fabric.loadSVGFromURL("/assets/"+sname+".svg", (paths)=>{
+            "rabbit_blankly", "rabbit_good", "rabbit_oops", "rabbit_sad"
+        ];
+        self.stampNames.forEach(sname => {
+            fabric.loadSVGFromURL("/assets/" + sname + ".svg", (paths) => {
                 paths.forEach((n) => {
                     n.scale(0.1);
                     self.stamps[sname] = n;
@@ -509,15 +489,6 @@ raku.BoardView = Backbone.View.extend({
         }.bind(this));
     },
 
-    nextStamp: function(){
-        self.currentStampIdx++;
-        if(self.currentStampIdx >= self.stampNames.length){
-            self.currentStampIdx = 0;
-        }
-        self.currentStamp = self.stamps[self.stampNames[self.currentStampIdx]];
-
-    },
-
     setUpCanvas: function (boardId) {
         const self = this;
         this.cleanUpCanvas();
@@ -525,14 +496,18 @@ raku.BoardView = Backbone.View.extend({
         this.objectMap = {}
 
         // SetUp Attendee Color
-        $(".palette").css({"background-color": this.attendee.color});
-        $(".profile").css({"background-color": this.attendee.color});
+        $(".palette").css({
+            "background-color": this.attendee.color
+        });
+        $(".profile").css({
+            "background-color": this.attendee.color
+        });
         // Setup Brush
         this.canvas.freeDrawingBrush.color = this.attendee.color;
 
         // Setup Current Stamp
         self.currentStampIdx = 0;
-        self.currentStamp = self.stamps[self.stampNames[self.currentStampIdx]]; 
+        self.currentStamp = self.stamps[self.stampNames[self.currentStampIdx]];
 
 
         // Listen firebase Event
@@ -560,12 +535,12 @@ raku.BoardView = Backbone.View.extend({
         });
         this.__listenRefs.push(objectsRef);
 
-        objectsRef.on("child_changed", (snap, prevId)=>{
+        objectsRef.on("child_changed", (snap, prevId) => {
             console.log("child_changed", snap, prevId);
             let key = snap.key;
             let prev = self.objectMap[key];
             let data = _.fromFBJson(snap.val());
-            if(prev.version != data.version){
+            if (prev.version != data.version) {
                 prev.set(data);
                 canvas.renderAll();
             }
@@ -590,20 +565,64 @@ raku.BoardView = Backbone.View.extend({
             }
         });
 
-        this.canvas.on("object:modified", ev=>{
+        this.canvas.on("object:modified", ev => {
             let target = ev.target;
-            console.log("object:modified", target);
-            target.set("version", 1+ (target.version||0))
-            let data = target.toObject(["uuid", "createdBy", "version"]);
-            let key = _.findKey(self.objectMap, {uuid:data.uuid});
-            self.objectMap[key] = target;
-            objectsRef.child(key).set(_.toFBJson(data));
+
+            function updateObject(target) {
+                console.log("object:modified", target);
+
+                if (target instanceof fabric.Group) {
+                    //Groupの場合はobject単位に分割して更新する
+                    for (subtarget of target.getObjects()) {
+                        updateObject(subtarget);
+                    }
+                    return
+                }
+                target.set("version", 1 + (target.version || 0))
+                let data = target.toObject(["uuid", "createdBy", "version"]);
+                let key = _.findKey(self.objectMap, {
+                    uuid: data.uuid
+                });
+                self.objectMap[key] = target;
+                objectsRef.child(key).set(_.toFBJson(data));
+            }
+            updateObject(target);
         });
-        this.canvas.on("object:removed", ev=>{
+        this.canvas.on("object:removed", ev => {
             console.log("object:removed");
 
         });
-        
+
+        //mousedown
+        this.canvas.on("mouse:down", ev => {
+            console.log(ev);
+            let srcEvt = ev.e;
+            let viewportLeft = canvas.viewportTransform[4];
+            let viewportTop = canvas.viewportTransform[5];
+            let cx = srcEvt.clientX;
+            let cy = srcEvt.clientY;
+            let cp = new fabric.Point(cx, cy);
+            let ivp = fabric.util.invertTransform(canvas.viewportTransform)
+            let gp = fabric.util.transformPoint(cp, ivp);
+            if (canvas.activeStampMode) {
+                console.log("STAMP!");
+                let n = self.currentStamp.clone();
+                n.fill = self.attendee.color;
+                n.left = gp.x;
+                n.top = gp.y;
+                canvas.__droppingObject = n;
+                canvas.add(n);
+            } else if (canvas.activeTextMode) {
+                console.log("TEXT!!!");
+                let n = new fabric.IText("Text", {
+                    fill: self.attendee.color
+                });
+                n.left = gp.x;
+                n.top = gp.y;
+                canvas.add(n);
+                canvas.setActiveObject(n);
+            }
+        });
     },
 
     cleanUpCanvas: function () {
@@ -620,7 +639,74 @@ raku.BoardView = Backbone.View.extend({
         this.canvas.setHeight(window.innerHeight);
         this.canvas.setWidth(window.innerWidth);
         this.canvas.renderAll();
-    }
+    },
+
+    getMode: function () {
+        return this.currentMode;
+    },
+
+    setMode: function (mode) {
+        const canvas = this.canvas;
+        let previousMode = this.currentMode;
+        switch (mode) {
+            case "draW":
+                canvas.selection = false;
+                canvas.isDrawingMode = true;
+                canvas.activePanningMode = false;
+                canvas.activeTextMode = false;
+                canvas.activeStampMode = false;
+                break;
+            case "text":
+                canvas.defaultCursor = "text";
+                canvas.selection = false;
+                canvas.isDrawingMode = false;
+                canvas.activePanningMode = false;
+                canvas.activeTextMode = true;
+                canvas.activeStampMode = false;
+                break;
+            case "stamp":
+                canvas.defaultCursor = "cell";
+                canvas.selection = false;
+                canvas.isDrawingMode = false;
+                canvas.activePanningMode = false;
+                canvas.activeTextMode = false;
+                canvas.activeStampMode = true;
+                break;
+            case "pan":
+                canvas.defaultCursor = "-webkit-grab";
+                canvas.selection = false;
+                canvas.isDrawingMode = false;
+                canvas.activePanningMode = true;
+                canvas.activeTextMode = false;
+                canvas.activeStampMode = false;
+                break;
+            case "select":
+            default:
+                //select mode
+                mode = "select"
+                canvas.defaultCursor = "auto"
+                canvas.selection = true;
+                canvas.isDrawingMode = false;
+                canvas.activePanningMode = false;
+                canvas.activeTextMode = false;
+                canvas.activeStampMode = false;
+        }
+        this.currentMode = mode;
+        console.log("canvas mode to " + this.currentMode);
+    },
+
+    /**
+     * ツールボックスのアクティブスタンプを次に移動する
+     */
+    nextStamp: function () {
+        self.currentStampIdx++;
+        if (self.currentStampIdx >= self.stampNames.length) {
+            self.currentStampIdx = 0;
+        }
+        self.currentStamp = self.stamps[self.stampNames[self.currentStampIdx]];
+
+    },
+
 });
 
 

@@ -199,3 +199,6 @@ img.user_photo {
 .palette .btn{
     margin-bottom: 10px;
 }
+.btn-default.active:hover{
+    background-color: #AAA;
+}
