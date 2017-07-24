@@ -546,6 +546,15 @@ raku.BoardView = Backbone.View.extend({
             }
         });
 
+        objectsRef.on("child_removed", oldsnap=>{
+            let key = oldsnap.key;
+            let prev = self.objectMap[key];
+            if(prev){
+                delete self.objectMap[key];
+                canvas.remove(prev);
+            }
+        });
+
         // Listen for canvas
         this.canvas.on("object:added", ev => {
             let target = ev.target;
@@ -590,7 +599,26 @@ raku.BoardView = Backbone.View.extend({
         });
         this.canvas.on("object:removed", ev => {
             console.log("object:removed");
+            function removeObject(target){
+                console.log("object:removed", target);
+                if (target instanceof fabric.Group) {
+                    //Groupの場合はobject単位に分割して更新する
+                    for (subtarget of target.getObjects()) {
+                        removeObject(subtarget);
+                    }
+                    return
+                }
 
+                let key = _.findKey(self.objectMap, {
+                    uuid: target.uuid
+                });
+                if(self.objectMap[key]){
+                    delete self.objectMap[key];
+                    objectsRef.child(key).remove();
+                }
+
+            }
+            removeObject(ev.target)
         });
 
         //mousedown
