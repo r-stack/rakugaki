@@ -448,12 +448,12 @@ raku.BoardView = Backbone.View.extend({
 
         self.stamps = {};
         //load stamp sprites(FontAwesome)
-        fabric.loadSVGFromURL("/assets/sprites.svg", (paths) => {
-            paths.forEach((n) => {
-                n.scale(0.04);
-            });
-            self.sprites = paths;
-        });
+        // fabric.loadSVGFromURL("/assets/sprites.svg", (paths) => {
+        //     paths.forEach((n) => {
+        //         n.scale(0.04);
+        //     });
+        //     self.sprites = paths;
+        // });
 
         self.stampNames = ["heart_1", "heart_2", "rabbit_apathy",
             "rabbit_blankly", "rabbit_good", "rabbit_oops", "rabbit_sad"
@@ -677,7 +677,7 @@ raku.BoardView = Backbone.View.extend({
         const canvas = this.canvas;
         let previousMode = this.currentMode;
         switch (mode) {
-            case "draW":
+            case "draw":
                 canvas.selection = false;
                 canvas.isDrawingMode = true;
                 canvas.activePanningMode = false;
